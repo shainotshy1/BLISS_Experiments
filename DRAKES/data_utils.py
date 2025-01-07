@@ -1,3 +1,6 @@
+# NOTE: ALL CODE IN THIS FILE IS TAKEN FROM THE DRAKES REPO
+# https://github.com/ChenyuWang-Monica/DRAKES/blob/master/drakes_protein/protein_oracle/data_utils.py
+
 import torch
 from torch.utils.data import Dataset, DataLoader
 from Bio.PDB import PDBParser
