@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+from math import floor, ceil
 
 def display_eval(df, target_protein = None):
     if target_protein is not None:
@@ -49,9 +50,32 @@ def analyze_protein_gen_helper(protein_name, dfs, dfs_labels, clrs):
 
     plt.axvline(x=0, color='#E06455', linestyle='--', label='Wild-type')
 
-    plt.title(protein_name, fontsize=18)
+    #plt.title(protein_name, fontsize=18)
     plt.xlabel('Predicted ΔΔG', fontsize=14)
     plt.ylabel('Density', fontsize=14)
     plt.legend(title='', loc='upper left', fontsize=10)
     
     plt.show()
+
+def plot_reward_comparison(iterations, rewards, colors, linestyles, labels, title):
+  plt.style.use('default')
+  fig, ax = plt.subplots()
+  ax.grid(color='gray', linewidth=0.5)
+  for i, reward in enumerate(rewards):
+      ax.plot(iterations, reward, color=colors[i], label=labels[i], linestyle=linestyles[i])
+  ax.set_ylabel('Average Predicted ΔΔG')
+  ax.set_xlabel('Diffusion Iteration')
+  ax.tick_params(axis='y', labelcolor='black')
+  all_reward = np.concatenate(rewards)
+  ax.set_ylim(min(all_reward), max(all_reward))
+  ax.set_xlim(min(iterations), max(iterations))
+  y_min = floor(min(all_reward) * 2) / 2
+  y_max = ceil(max(all_reward) * 2) / 2
+  ax.set_yticks(np.linspace(y_min, y_max, num=5))
+
+  num_items = len(colors)
+  ncol = num_items if num_items <= 3 else num_items // 2
+  plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.16), ncol=ncol, frameon=False)
+  plt.title(title, pad=40)
+  plt.tight_layout()
+  plt.show()
