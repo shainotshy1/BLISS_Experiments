@@ -31,11 +31,26 @@ def display_eval(df, target_protein = None):
     }
     return stats
 
-def analyze_protein_gen_helper(protein_name, dfs, dfs_labels, clrs):
+def plot_line_prot_comp(key, groups, group_labels, item_labels, markers=None, title='', x_label='', y_label='', h_line_threshold=None, h_line_label=''):
+    if markers == None:
+        markers = ['o' for _ in range(len(groups))]
+    for group, label, marker in zip(groups, group_labels, markers):
+        values = [t[key] for t in group]
+        plt.style.use('default')
+        plt.plot(item_labels, values, marker=marker, label=label)
+        plt.title(title)
+        plt.xlabel(x_label)
+        plt.ylabel(y_label)
+    if h_line_threshold is not None:
+        plt.axhline(y=0, color='#E06455', linestyle='--', label=h_line_label)
+    plt.legend()
+    plt.show()
+
+def analyze_protein_gen_helper(protein_name, dfs, dfs_labels, clrs, key, y_label='', v_line_thresh=None, v_line_label=''):
     energy_points = None
     group_labels = []
     for df, label in zip(dfs, dfs_labels):
-      pred_ddg = df[df['protein_name'] == protein_name + '.pdb']['rewards_eval'].values
+      pred_ddg = df[df['protein_name'] == protein_name + '.pdb'][key].values
       group_labels.extend([label] * pred_ddg.shape[0])
       energy_points = pred_ddg if (energy_points is None) else np.concatenate((energy_points, pred_ddg))
 
@@ -43,17 +58,18 @@ def analyze_protein_gen_helper(protein_name, dfs, dfs_labels, clrs):
     'Energy': np.array(energy_points),
     'Group': group_labels
     })
-
+    plt.style.use('default')
     plt.figure(figsize=(8, 6))
     for label, clr in zip(dfs_labels, clrs):
       sns.kdeplot(data=data[data['Group'] == label], x='Energy', color=clr, label=label, fill=True, alpha=0.4, bw_adjust=0.8)
 
-    plt.axvline(x=0, color='#E06455', linestyle='--', label='Wild-type')
+    if v_line_thresh is not None:
+      plt.axvline(x=v_line_thresh, color='#E06455', linestyle='--', label=v_line_label)
 
     #plt.title(protein_name, fontsize=18)
-    plt.xlabel('Predicted ΔΔG', fontsize=14)
+    plt.xlabel(y_label, fontsize=14)
     plt.ylabel('Density', fontsize=14)
-    plt.legend(title='', loc='upper left', fontsize=10)
+    plt.legend(title='', loc='upper right', fontsize=10)
     
     plt.show()
 
