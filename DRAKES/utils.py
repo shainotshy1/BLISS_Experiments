@@ -66,7 +66,6 @@ def analyze_protein_gen_helper(protein_name, dfs, dfs_labels, clrs, key, y_label
     if v_line_thresh is not None:
       plt.axvline(x=v_line_thresh, color='#E06455', linestyle='--', label=v_line_label)
 
-    #plt.title(protein_name, fontsize=18)
     plt.xlabel(y_label, fontsize=14)
     plt.ylabel('Density', fontsize=14)
     plt.legend(title='', loc='upper right', fontsize=10)
