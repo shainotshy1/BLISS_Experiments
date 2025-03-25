@@ -9,25 +9,29 @@ def display_eval(df, target_protein = None):
         df = df[df['protein_name'] == target_protein + '.pdb']
     rewards_eval = df['rewards_eval'].values
     scRMSD_eval = df['gen_true_bb_rmsd'].values
+    loglikelihoods = df['loglikelihood'].values
 
     pred_ddg_med = np.median(rewards_eval)
     pos_ddg_prop = np.mean(rewards_eval > 0)
     scRMSD_med = np.median(scRMSD_eval)
     low_rmsd_prop = np.mean(scRMSD_eval < 2)
     success_rate = np.mean((rewards_eval > 0) & (scRMSD_eval < 2))
+    log_likelihood_med = np.median(loglikelihoods)
 
     print(f"Pred-ddG (median)↑: {pred_ddg_med:.3f}")
     print(f"%(ddG > 0) (%)↑: {pos_ddg_prop * 100:.1f}")
     print(f"scRMSD (median)↓: {scRMSD_med:.3f}")
     print(f"%(scRMSD < 2)(%)↑: {low_rmsd_prop * 100:.1f}")
     print(f"Success Rate (%)↑: {success_rate * 100:.1f}")
+    print(f"Log Likelihood (median): {log_likelihood_med:.3f}")
 
     stats = {
         "pred_ddg_med" : pred_ddg_med,
         "pos_ddg_prop" : pos_ddg_prop,
         "scRMSD_med" : scRMSD_med,
         "low_rmsd_prop" : low_rmsd_prop,
-        "success_rate" : success_rate
+        "success_rate" : success_rate,
+        "ll_med" : log_likelihood_med
     }
     return stats
 
