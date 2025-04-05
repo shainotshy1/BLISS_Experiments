@@ -76,13 +76,13 @@ def analyze_protein_gen_helper(protein_name, dfs, dfs_labels, clrs, key, y_label
     
     plt.show()
 
-def plot_reward_comparison(iterations, rewards, colors, linestyles, labels, title):
+def plot_reward_comparison(iterations, rewards, colors, linestyles, labels, title, reward_label):
   plt.style.use('default')
   fig, ax = plt.subplots()
   ax.grid(color='gray', linewidth=0.5)
   for i, reward in enumerate(rewards):
       ax.plot(iterations, reward, color=colors[i], label=labels[i], linestyle=linestyles[i])
-  ax.set_ylabel('Average Predicted ΔΔG')
+  ax.set_ylabel(reward_label)
   ax.set_xlabel('Diffusion Iteration')
   ax.tick_params(axis='y', labelcolor='black')
   all_reward = np.concatenate(rewards)
