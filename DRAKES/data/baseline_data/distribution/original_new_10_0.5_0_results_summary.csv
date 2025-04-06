@@ -1,12 +1,12 @@
-,Value
-Sequence Recovery Accuracy,0.4017807904411765
-Mean Reward,0.9975531697273254
-Positive Reward Proportion,0.8658854166666666
-Mean Reward (ft),0.6962116360664368
-Positive Reward Proportion (ft),1.0
-Median Reward,1.0843185186386108
-Median Reward (ft),0.7022280693054199
-Median gen_true RMSD,0.9134748876094818
-Mean gen_true RMSD,1.1634335715595323
-Good RMSD Proportion,0.923828125
-Success Rate,0.7936197916666666
+Unnamed: 0,Value,scrmsd
+Sequence Recovery Accuracy,0.4017807904411765,
+Mean Reward,0.9975531697273254,
+Positive Reward Proportion,0.8658854166666666,
+Mean Reward (ft),0.6962116360664368,
+Positive Reward Proportion (ft),1.0,
+Median Reward,1.0843185186386108,
+Median Reward (ft),0.7022280693054199,
+Median gen_true RMSD,0.9134748876094818,
+Mean gen_true RMSD,1.1634335715595323,
+Good RMSD Proportion,0.923828125,
+Success Rate,0.7936197916666666,
