@@ -16,7 +16,6 @@ import os
 import shutil
 import warnings
 import os.path
-from protein_oracle.utils import set_seed
 from tqdm import tqdm
 from multiflow.models import folding_model
 from types import SimpleNamespace
