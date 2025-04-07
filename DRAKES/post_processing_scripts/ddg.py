@@ -8,6 +8,8 @@ from protein_oracle.model_utils import ProteinMPNNOracle
 from protein_oracle.data_utils import featurize
 from protein_oracle.data_utils import ALPHABET
 from utils import process_seq_data_directory, get_drakes_test_data
+import warnings
+warnings.filterwarnings("ignore", message=".*use_reentrant.*")
 
 def extract_features(protein_name, protein_batches, cached_features):
     if protein_name not in cached_features:
