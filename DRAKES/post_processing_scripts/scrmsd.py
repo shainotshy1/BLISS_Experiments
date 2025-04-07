@@ -2,7 +2,6 @@ import argparse
 from tqdm import tqdm
 import argparse
 import os.path
-import pickle
 from protein_oracle.utils import str2bool
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -16,11 +15,8 @@ import torch
 import os
 import shutil
 import warnings
-from torch.utils.data import DataLoader
 import os.path
 from protein_oracle.utils import set_seed
-from protein_oracle.data_utils import ProteinStructureDataset, ProteinDPODataset, featurize
-from protein_oracle.model_utils import ProteinMPNNOracle
 from tqdm import tqdm
 from multiflow.models import folding_model
 from types import SimpleNamespace
@@ -34,7 +30,7 @@ from pyrosetta.rosetta.core.pack.task.operation import RestrictToRepacking
 from pyrosetta import *
 import esm
 import biotite.structure.io as bsio
-from utils import process_seq_data_directory
+from utils import process_seq_data_directory, get_drakes_test_data
 
 def calc_rcsmd(pose, true_pose):
     return pyrosetta.rosetta.core.scoring.bb_rmsd(true_pose, pose)
@@ -96,33 +92,17 @@ def extract_scrmsd_distr(df, seq_label, true_seq_label, protein_label, base_path
         true_protein_fn = true_protein_fns[i]
         if seq == true_sequence:
             values.append(0)
-            continue
-        if (seq, true_sequence) in cached_scrmsd:
+        elif (seq, true_sequence) in cached_scrmsd:
             values.append(cached_scrmsd[(seq, true_sequence)])
-        pose = calc_new_pose(seq, model, cached_poses, base_path)
-        true_pose = get_true_pose(true_protein_fn, pdb_paths, cached_poses)
-        values.append(calc_rcsmd(pose, true_pose))
-        print(values[-1])
-        print(seq)
-        print(true_sequence)
+        else:
+            pose = calc_new_pose(seq, model, cached_poses, base_path)
+            true_pose = get_true_pose(true_protein_fn, pdb_paths, cached_poses)
+            values.append(calc_rcsmd(pose, true_pose))
     values = np.array(values)
     return values
 
 def extract_scrmsd_directory(dir_name, seq_label, true_seq_label, protein_label):
-    base_path = "DRAKES/data/data_and_model"
-    pdb_path = os.path.join(base_path, 'proteindpo_data/AlphaFold_model_PDBs')
-    max_len = 75  # Define the maximum length of proteins
-    dataset = ProteinStructureDataset(pdb_path, max_len) # max_len set to 75 (sequences range from 31 to 74)
-    loader = DataLoader(dataset, batch_size=1000, shuffle=False)
-    for batch in loader:
-        pdb_structures = batch[0]
-        pdb_filenames = batch[1]
-        pdb_idx_dict = {pdb_filenames[i]: i for i in range(len(pdb_filenames))}
-        break
-    dpo_dict_path = os.path.join(base_path, 'proteindpo_data/processed_data')
-    dpo_test_dict = pickle.load(open(os.path.join(dpo_dict_path, 'dpo_test_dict_wt.pkl'), 'rb'))
-    dpo_test_dataset = ProteinDPODataset(dpo_test_dict, pdb_idx_dict, pdb_structures)
-    loader_test = DataLoader(dpo_test_dataset, batch_size=1, shuffle=False)
+    base_path, pdb_path, loader_test = get_drakes_test_data()
     pdb_paths = {}
     for batch in loader_test:
         pdb_paths[batch['protein_name'][0]] = os.path.join(pdb_path, batch['WT_name'][0])

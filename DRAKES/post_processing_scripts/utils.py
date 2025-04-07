@@ -1,5 +1,8 @@
 import os
 import pandas as pd
+from protein_oracle.data_utils import ProteinStructureDataset, ProteinDPODataset, featurize
+from torch.utils.data import DataLoader
+import pickle
 
 def process_seq_data_directory(dir_name, target_col, process_fn):
     for fn in os.listdir(dir_name):
@@ -18,3 +21,20 @@ def process_seq_data_directory(dir_name, target_col, process_fn):
             except Exception as e: 
                 print(e)
                 pass
+
+def get_drakes_test_data():
+    base_path = "DRAKES/data/data_and_model"
+    pdb_path = os.path.join(base_path, 'proteindpo_data/AlphaFold_model_PDBs')
+    max_len = 75  # Define the maximum length of proteins
+    dataset = ProteinStructureDataset(pdb_path, max_len) # max_len set to 75 (sequences range from 31 to 74)
+    loader = DataLoader(dataset, batch_size=1000, shuffle=False)
+    for batch in loader:
+        pdb_structures = batch[0]
+        pdb_filenames = batch[1]
+        pdb_idx_dict = {pdb_filenames[i]: i for i in range(len(pdb_filenames))}
+        break
+    dpo_dict_path = os.path.join(base_path, 'proteindpo_data/processed_data')
+    dpo_test_dict = pickle.load(open(os.path.join(dpo_dict_path, 'dpo_test_dict_wt.pkl'), 'rb'))
+    dpo_test_dataset = ProteinDPODataset(dpo_test_dict, pdb_idx_dict, pdb_structures)
+    loader_test = DataLoader(dpo_test_dataset, batch_size=1, shuffle=False)
+    return base_path, pdb_path, loader_test
