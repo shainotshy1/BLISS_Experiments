@@ -100,7 +100,7 @@ def extract_scrmsd_distr(df, seq_label, true_seq_label, protein_label, base_path
     values = np.array(values)
     return values
 
-def extract_scrmsd_directory(dir_name, seq_label, true_seq_label, protein_label):
+def extract_scrmsd_directory(dir_name, seq_label, true_seq_label, protein_label, device_id):
     base_path, pdb_path, loader_test = get_drakes_test_data()
     pdb_paths = {}
     for batch in loader_test:
@@ -115,7 +115,7 @@ def extract_scrmsd_directory(dir_name, seq_label, true_seq_label, protein_label)
             'colabfold_path': os.path.join(base_path, 'colabfold-conda/bin/colabfold_batch') # for AF2
         }
         folding_cfg = SimpleNamespace(**folding_cfg)
-        model = folding_model.FoldingModel(folding_cfg)
+        model = folding_model.FoldingModel(folding_cfg, device_id=device_id)
 
     process_seq_data_directory(dir_name, 'scrmsd', lambda df : extract_scrmsd_distr(df, seq_label, true_seq_label, protein_label, base_path, model, pdb_paths))
 
@@ -125,4 +125,5 @@ if __name__ == '__main__':
     parser.add_argument("--gpu", help="GPU device index", default=0)
     args = parser.parse_args()
 
-    extract_scrmsd_directory(args.dir, 'seq', 'true_seq', 'protein_name')
+    device_id = int(args.gpu)
+    extract_scrmsd_directory(args.dir, 'seq', 'true_seq', 'protein_name', device_id)

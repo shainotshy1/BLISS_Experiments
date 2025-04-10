@@ -54,9 +54,12 @@ def analyze_protein_gen_helper(protein_name, dfs, dfs_labels, clrs, key, y_label
     energy_points = None
     group_labels = []
     for df, label in zip(dfs, dfs_labels):
-      pred_ddg = df[df['protein_name'] == protein_name + '.pdb'][key].values
-      group_labels.extend([label] * pred_ddg.shape[0])
-      energy_points = pred_ddg if (energy_points is None) else np.concatenate((energy_points, pred_ddg))
+        if protein_name is not None:
+            pred_ddg = df[df['protein_name'] == protein_name + '.pdb'][key].values
+        else:
+            pred_ddg = df[key].values
+        group_labels.extend([label] * pred_ddg.shape[0])
+        energy_points = pred_ddg if (energy_points is None) else np.concatenate((energy_points, pred_ddg))
 
     data = pd.DataFrame({
     'Energy': np.array(energy_points),
@@ -72,8 +75,9 @@ def analyze_protein_gen_helper(protein_name, dfs, dfs_labels, clrs, key, y_label
 
     plt.xlabel(y_label, fontsize=14)
     plt.ylabel('Density', fontsize=14)
-    plt.legend(title='', loc='upper right', fontsize=10)
-    
+    #plt.legend(title='', loc='lower center', fontsize=8, ncol=2)
+    plt.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=10)
+
     plt.show()
 
 def plot_reward_comparison(iterations, rewards, colors, linestyles, labels, title, reward_label):
