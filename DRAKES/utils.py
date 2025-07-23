@@ -122,15 +122,16 @@ def analyze_protein_gen_helper_violin(protein_name, dfs, dfs_labels, clrs, key, 
     plt.style.use('default')
     plt.figure(figsize=(8, 6))
     
-    ax = sns.violinplot(
+    ax = sns.boxplot(
         data=data,
         x='Group',
         y='Energy',
         hue='Group',
         palette=clrs,
-        cut=0,
-        inner='box',
-        dodge=False,       # Important so the violins are not split
+        showfliers=False,
+        # cut=0,
+        # inner='box',
+        # dodge=False,       # Important so the violins are not split
         legend=False       # Do NOT let seaborn auto-create legend
     )
 
