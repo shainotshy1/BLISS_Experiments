@@ -158,7 +158,7 @@ def analyze_protein_gen_helper_violin(protein_name, dfs, dfs_labels, clrs, key, 
         ncol = num_items if num_items <= 3 else num_items // 2
         plt.legend(handles=patches, loc='upper center', bbox_to_anchor=(0.5, 1.12), ncol=ncol, frameon=False)
     
-    if title is not "":
+    if title != "":
         plt.title(title)
 
     plt.tight_layout()
