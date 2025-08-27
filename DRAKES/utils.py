@@ -4,18 +4,18 @@ import seaborn as sns
 import pandas as pd
 from math import floor, ceil
 
-def get_eval_stats(df, target_protein = None):
+def get_eval_stats(df, target_protein = None, summary_func = np.median):
     if target_protein is not None:
         df = df[df['protein_name'] == target_protein + '.pdb']
     stats = {}
     if 'ddg_eval' in df:
         ddg_eval = df['ddg_eval'].values
-        stats['ddg'] = np.median(ddg_eval)
+        stats['ddg'] = summary_func(ddg_eval)
         stats['ddg_std'] = np.std(ddg_eval)
         stats['pos_ddg_prop'] = np.mean(ddg_eval > 0)
     if 'scrmsd' in df:
         scrmsd_eval = df['scrmsd'].values
-        stats['scrmsd'] = np.median(scrmsd_eval)
+        stats['scrmsd'] = summary_func(scrmsd_eval)
         stats['scrmsd_std'] = np.std(scrmsd_eval)
         stats['low_scrmsd_prop'] = np.mean(scrmsd_eval < 2)
     if 'ddg_eval' in df and 'scrmsd' in df:
@@ -23,7 +23,7 @@ def get_eval_stats(df, target_protein = None):
         stats['success_rate'] = success_rate
     if 'loglikelihood' in df:
         ll_eval = df['loglikelihood'].values
-        stats['ll'] = np.median(ll_eval)
+        stats['ll'] = summary_func(ll_eval)
         stats['ll_std'] = np.std(ll_eval)
     return stats
     
@@ -103,7 +103,7 @@ import seaborn as sns
 import matplotlib.patches as mpatches
 from matplotlib.collections import PolyCollection
 
-def analyze_protein_gen_helper_violin(protein_name, dfs, dfs_labels, clrs, key, y_label='', v_line_thresh=None, v_line_label='', legend_pos='top'):
+def analyze_protein_gen_helper_violin(protein_name, dfs, dfs_labels, clrs, key, y_label='', v_line_thresh=None, v_line_label='', legend_pos='top', title=''):
     energy_points = None
     group_labels = []
     for df, label in zip(dfs, dfs_labels):
@@ -120,7 +120,10 @@ def analyze_protein_gen_helper_violin(protein_name, dfs, dfs_labels, clrs, key, 
     })
 
     plt.style.use('default')
-    plt.figure(figsize=(8, 6))
+    if legend_pos == 'right':
+        plt.figure(figsize=(10, 6))
+    else:
+        plt.figure(figsize=(8, 6))
     
     ax = sns.boxplot(
         data=data,
@@ -155,6 +158,9 @@ def analyze_protein_gen_helper_violin(protein_name, dfs, dfs_labels, clrs, key, 
         ncol = num_items if num_items <= 3 else num_items // 2
         plt.legend(handles=patches, loc='upper center', bbox_to_anchor=(0.5, 1.12), ncol=ncol, frameon=False)
     
+    if title is not "":
+        plt.title(title)
+
     plt.tight_layout()
     plt.show()
 
