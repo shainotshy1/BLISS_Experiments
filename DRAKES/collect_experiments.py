@@ -1,6 +1,11 @@
 from dataclasses import dataclass
 from typing import Optional
 import pandas as pd
+import os
+
+from utils import get_eval_stats, analyze_protein_gen_helper, analyze_protein_gen_helper_violin
+import seaborn as sn
+import importlib
 
 @dataclass
 class BLISSExperiment:
@@ -35,129 +40,85 @@ class BLISSExperiment:
         data_path = f"{self.base_path}{self.get_test_name()}.csv"
         return pd.read_csv(data_path)
 
-def collect_ddg_n10_experiments() -> list[BLISSExperiment]:
+# Hardcoded labels for graphing
+experiment_names = {
+    'pretrained_test_ddg_linear_N=10_lambda=0.0005': 'Pretrained LASSO (N=10, λ=0.0005)',
+    'pretrained_test_ddg_bon_N=10': 'Pretrained BON (N=10)',
+    'pretrained_test_ddg_beam_N=10': 'Pretrained BEAM (N=10)',
+    'pretrained_test_ddg_linear_N=50_lambda=0.005': 'Pretrained LASSO (N=50, λ=0.0005)',
+    'pretrained_test_ddg_spectral_N=50': 'Pretrained SPECTRAL (N=50)',
+    'pretrained_test_ddg_bon_N=50': 'Pretrained BON (N=50)',
+    'pretrained_test_ddg_beam_N=50': 'Pretrained BEAM (N=50)',
+    'pretrained_test_protgpt_bon_N=10': 'Pretrained BON (N=10)',
+    'drakes_test': 'DRAKES',
+    'pretrained_test': 'Pretrained'
+}
+
+
+# Based off order of parsing: model, [target_protein], dataset, oracle_mode, [oracle_alpha], align_type, align_n, [lasso_lambda]
+def collect_experiments(n, oracle, dataset='test', model='all') -> list[BLISSExperiment]:
     bliss_dir = '/home/shai/BLISS_Experiments/DRAKES/'
     exp_dir = 'DRAKES/drakes_protein/fmif/eval_results/'
-    dataset = 'test'
-    experiments = []
+    base_path = bliss_dir + exp_dir + dataset + '/'
+    assert dataset in ['test', 'validation', 'train'] # TODO: support 'single' parsing
+    assert model in ['all', 'pretrained', 'drakes']
+    assert oracle in ['ddg', 'protgpt', 'balanced'] # TODO: support scrmsd
+    assert type(n) == int and n > 0
 
-    # Pretrained
-    experiments.append(BLISSExperiment(
-        name='Pretrained',
-        base_path=bliss_dir + 'data_full/baseline/pretrained/distribution/',
-        model='pretrained',
-        dataset=dataset
-    ))
+    # Collect experiment names 
+    target_dir = bliss_dir + exp_dir + dataset + '/'
+    all_experiments_fn = [f for f in os.listdir(target_dir) if f.endswith('.csv')]
+    valid_experiments = []
+    for f in all_experiments_fn:
+        f = f[:-4]  # Remove .csv
+        exp_name = experiment_names.get(f, f)
+        exp = BLISSExperiment(exp_name, base_path)
+        components = f.split('_')
 
-    # Pretrained, ddg, LASSO, N=10, lambda=0.0005
-    experiments.append(BLISSExperiment(
-        name='Pretrained LASSO (N=10, λ=0.0005)',
-        base_path=exp_dir + dataset + '/',
-        model='pretrained',
-        dataset=dataset,
-        align_type='linear',
-        align_n=10,
-        oracle_mode='ddg',
-        lasso_lambda=0.0005
-    ))
+        if model != 'all' and components[0] != model: continue
+        exp.model = components[0]
 
-    # Pretrained, ddg, BON, N=10
-    experiments.append(BLISSExperiment(
-        name='Pretrained BON (N=10)',
-        base_path=exp_dir + dataset + '/',
-        model='pretrained',
-        dataset=dataset,
-        align_type='bon',
-        align_n=10,
-        oracle_mode='ddg'
-    ))
+        idx_offset = 0
+        if exp.model == 'single':
+            exp.target_protein = components[1]
+            idx_offset += 1
 
-    # Pretrained, ddg, BEAM, N=10
-    experiments.append(BLISSExperiment(
-        name='Pretrained BEAM (N=10)',
-        base_path=exp_dir + dataset + '/',
-        model='pretrained',
-        dataset=dataset,
-        align_type='beam',
-        align_n=10,
-        oracle_mode='ddg'
-    ))
+        if components[1 + idx_offset] != dataset: continue
+        exp.dataset = dataset
+
+        if len(components) > 3: # Process inference alignment experiments
+            exp.oracle_mode = components[2 + idx_offset]
+            if exp.oracle_mode != oracle: continue
+            if exp.oracle_mode == 'balanced':
+                exp.oracle_alpha = float(components[3 + idx_offset][6:]) # Removing prefix 'alpha='
+                idx_offset += 1
+            
+            exp.align_type = components[3 + idx_offset]
+            exp.align_n = int(components[4 + idx_offset][2:]) # Removing prefix 'N='
+            if exp.align_n != n: continue
+
+            if exp.align_type == 'linear':
+                exp.lasso_lambda = float(components[5 + idx_offset][7:]) # Removing prefix 'lambda='
+                idx_offset += 1
+
+        valid_experiments.append(exp)
+        
+    return valid_experiments
+
+def display_experiments(n, oracle, target_protein=None):
+    experiments = collect_experiments(n, oracle)
+    data = [exp.get_df() for exp in experiments]
+    labels = [exp.name for exp in experiments]
+    colors = sn.color_palette("Set2", len(experiments))
+    protein_output = target_protein + " " if target_protein is not None else ""
     
-    # DRAKES
-    experiments.append(BLISSExperiment(
-        name='DRAKES',
-        base_path=bliss_dir + 'data_full/baseline/drakes/distribution/',
-        model='drakes',
-        dataset=dataset
-    ))
-
-    return experiments
-
-def collect_ddg_n50_experiments() -> list[BLISSExperiment]:
-    bliss_dir = '/home/shai/BLISS_Experiments/DRAKES/'
-    exp_dir = 'DRAKES/drakes_protein/fmif/eval_results/'
-    dataset = 'test'
-    experiments = []
-
-    # Pretrained
-    experiments.append(BLISSExperiment(
-        name='Pretrained',
-        base_path=bliss_dir + 'data_full/baseline/pretrained/distribution/',
-        model='pretrained',
-        dataset=dataset
-    ))
-
-    # Pretrained, ddg, LASSO, N=50, lambda=0.0005
-    experiments.append(BLISSExperiment(
-        name='Pretrained LASSO (N=50, λ=0.0005)',
-        base_path=exp_dir + dataset + '/',
-        model='pretrained',
-        dataset=dataset,
-        align_type='linear',
-        align_n=50,
-        oracle_mode='ddg',
-        lasso_lambda=0.005
-    ))
-
-    # Pretrained, ddg, SPECTRAL, N=50
-    experiments.append(BLISSExperiment(
-        name='Pretrained SPECTRAL (N=50)',
-        base_path=exp_dir + dataset + '/',
-        model='pretrained',
-        dataset=dataset,
-        align_type='spectral',
-        align_n=50,
-        oracle_mode='ddg'
-    ))
-
-    # Pretrained, ddg, BON, N=50
-    experiments.append(BLISSExperiment(
-        name='Pretrained BON (N=50)',
-        base_path=exp_dir + dataset + '/',
-        model='pretrained',
-        dataset=dataset,
-        align_type='bon',
-        align_n=50,
-        oracle_mode='ddg'
-    ))
-
-    # Pretrained, ddg, BEAM, N=50
-    experiments.append(BLISSExperiment(
-        name='Pretrained BEAM (N=50)',
-        base_path=exp_dir + dataset + '/',
-        model='pretrained',
-        dataset=dataset,
-        align_type='beam',
-        align_n=50,
-        oracle_mode='ddg'
-    ))
-    
-    # DRAKES
-    experiments.append(BLISSExperiment(
-        name='DRAKES',
-        base_path=bliss_dir + 'data_full/baseline/drakes/distribution/',
-        model='drakes',
-        dataset=dataset
-    ))
-
-    return experiments
+    if oracle == 'ddg':
+        oracle_name = 'ΔΔG'
+    elif oracle == 'protgpt':
+        oracle_name = 'Log Likelihood'
+    elif oracle == 'balanced':
+        oracle_name = 'Balanced'
+    else:
+        raise ValueError(f"Unknown oracle: {oracle}")
+    analyze_protein_gen_helper_violin(target_protein, data, labels, colors, 'ddg_eval', y_label='Predicted ΔΔG', legend_pos='right', title=f'{protein_output}ΔΔG Evaluation: {oracle_name} Alignment (N={n})')
+    analyze_protein_gen_helper_violin(target_protein, data, labels, colors, 'loglikelihood', y_label='Log Likelihood', legend_pos='right', title=f'{protein_output}Log Likelihood Evaluation: {oracle_name} Alignment (N={n})')
