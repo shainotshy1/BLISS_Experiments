@@ -56,7 +56,7 @@ experiment_names = {
 
 
 # Based off order of parsing: model, [target_protein], dataset, oracle_mode, [oracle_alpha], align_type, align_n, [lasso_lambda]
-def collect_experiments(n, oracle, dataset='test', model='all') -> list[BLISSExperiment]:
+def collect_experiments(n, oracle, dataset, model) -> list[BLISSExperiment]:
     bliss_dir = '/home/shai/BLISS_Experiments/DRAKES/'
     exp_dir = 'DRAKES/drakes_protein/fmif/eval_results/'
     base_path = bliss_dir + exp_dir + dataset + '/'
@@ -72,7 +72,7 @@ def collect_experiments(n, oracle, dataset='test', model='all') -> list[BLISSExp
     for f in all_experiments_fn:
         f = f[:-4]  # Remove .csv
         exp_name = experiment_names.get(f, f)
-        exp = BLISSExperiment(exp_name, base_path)
+        exp = BLISSExperiment(exp_name, base_path) # type: ignore
         components = f.split('_')
 
         if model != 'all' and components[0] != model: continue
@@ -105,8 +105,8 @@ def collect_experiments(n, oracle, dataset='test', model='all') -> list[BLISSExp
         
     return valid_experiments
 
-def display_experiments(n, oracle, target_protein=None):
-    experiments = collect_experiments(n, oracle)
+def display_experiments(n, oracle, dataset='test', model='all', target_protein=None):
+    experiments = collect_experiments(n, oracle, dataset, model)
     data = [exp.get_df() for exp in experiments]
     labels = [exp.name for exp in experiments]
     colors = sn.color_palette("Set2", len(experiments))
