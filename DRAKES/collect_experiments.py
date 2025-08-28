@@ -39,17 +39,25 @@ class BLISSExperiment:
     def get_df(self) -> pd.DataFrame:
         data_path = f"{self.base_path}{self.get_test_name()}.csv"
         return pd.read_csv(data_path)
+    
+    def get_stats(self) -> dict:
+        df = self.get_df()
+        return get_eval_stats(df)
 
 # Hardcoded labels for graphing
 experiment_names = {
     'pretrained_test_ddg_linear_N=10_lambda=0.0005': 'Pretrained LASSO (N=10, λ=0.0005)',
-    'pretrained_test_ddg_bon_N=10': 'Pretrained BON (N=10)',
-    'pretrained_test_ddg_beam_N=10': 'Pretrained BEAM (N=10)',
     'pretrained_test_ddg_linear_N=50_lambda=0.005': 'Pretrained LASSO (N=50, λ=0.0005)',
     'pretrained_test_ddg_spectral_N=50': 'Pretrained SPECTRAL (N=50)',
+    'pretrained_test_ddg_bon_N=10': 'Pretrained BON (N=10)',
+    'pretrained_test_ddg_beam_N=10': 'Pretrained BEAM (N=10)',
     'pretrained_test_ddg_bon_N=50': 'Pretrained BON (N=50)',
+    'pretrained_test_ddg_bon_N=100': 'Pretrained BON (N=100)',
     'pretrained_test_ddg_beam_N=50': 'Pretrained BEAM (N=50)',
+    'pretrained_test_ddg_beam_N=100': 'Pretrained BEAM (N=100)',
     'pretrained_test_protgpt_bon_N=10': 'Pretrained BON (N=10)',
+    'pretrained_test_protgpt_bon_N=50': 'Pretrained BON (N=50)',
+    'pretrained_test_protgpt_beam_N=10': 'Pretrained BEAM (N=10)',
     'drakes_test': 'DRAKES',
     'pretrained_test': 'Pretrained'
 }
@@ -102,6 +110,7 @@ def collect_experiments(n, oracle, dataset, model) -> list[BLISSExperiment]:
                 idx_offset += 1
 
         valid_experiments.append(exp)
+        print(exp.name, exp.get_stats())
         
     return valid_experiments
 
