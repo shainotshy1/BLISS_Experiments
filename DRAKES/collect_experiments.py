@@ -37,7 +37,7 @@ class BLISSExperiment:
         if self.align_type == "linear":
             out_name += f"_lambda={self.lasso_lambda}"
         elif self.align_type == "beam":
-            out_name += f"_beamw={self.beam_w}"
+            out_name += f"_W={self.beam_w}"
         if self.align_type != "bon" and self.steps_per_level:
             out_name += f"_stepsperlevel={self.steps_per_level}"
         return out_name
@@ -49,41 +49,6 @@ class BLISSExperiment:
     def get_stats(self) -> dict:
         df = self.get_df()
         return get_eval_stats(df)
-
-# Hardcoded labels for graphing
-experiment_names = {
-    'pretrained_test_ddg_linear_N=10_lambda=0.0005_stepsperlevel=1': 'Pretrained LASSO (N=10, λ=0.0005)',
-    'pretrained_test_ddg_linear_N=50_lambda=0.0005_stepsperlevel=1': 'Pretrained LASSO (N=50, λ=0.0005)',
-    'pretrained_test_ddg_linear_N=100_lambda=0.0005_stepsperlevel=1': 'Pretrained LASSO (N=100, λ=0.0005)',
-    'pretrained_test_ddg_spectral_N=50_stepsperlevel=1': 'Pretrained SPECTRAL (N=50)',
-    'pretrained_test_ddg_bon_N=10': 'Pretrained BON (N=10)',
-    'pretrained_test_ddg_bon_N=50': 'Pretrained BON (N=50)',
-    'pretrained_test_ddg_bon_N=100': 'Pretrained BON (N=100)',
-    'pretrained_test_ddg_bon_N=150': 'Pretrained BON (N=150)',
-    'pretrained_test_ddg_bon_N=200': 'Pretrained BON (N=200)',
-    'pretrained_test_ddg_bon_N=250': 'Pretrained BON (N=250)',
-    'pretrained_test_ddg_beam_N=10_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=10)',
-    'pretrained_test_ddg_beam_N=50_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=50)',
-    'pretrained_test_ddg_beam_N=100_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=100)',
-    'pretrained_test_ddg_beam_N=150_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=150)',
-    'pretrained_test_ddg_beam_N=200_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=200)',
-    'pretrained_test_ddg_beam_N=250_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=250)',
-    'pretrained_test_protgpt_bon_N=10': 'Pretrained BON (N=10)',
-    'pretrained_test_protgpt_bon_N=50': 'Pretrained BON (N=50)',
-    'pretrained_test_protgpt_bon_N=100': 'Pretrained BON (N=100)',
-    'pretrained_test_protgpt_bon_N=150': 'Pretrained BON (N=150)',
-    'pretrained_test_protgpt_bon_N=200': 'Pretrained BON (N=200)',
-    'pretrained_test_protgpt_bon_N=250': 'Pretrained BON (N=250)',
-    'pretrained_test_protgpt_beam_N=10_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=10)',
-    'pretrained_test_protgpt_beam_N=50_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=50)',
-    'pretrained_test_protgpt_beam_N=100_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=100)',
-    'pretrained_test_protgpt_beam_N=150_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=150)',
-    'pretrained_test_protgpt_beam_N=200_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=200)',
-    'pretrained_test_protgpt_beam_N=250_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=250)',
-    'drakes_test': 'DRAKES',
-    'pretrained_test': 'Pretrained'
-}
-
 
 # Based off order of parsing: model, dataset, oracle_mode, [oracle_alpha], align_type, align_n, [lasso_lambda]
 def collect_experiments(n, oracle, dataset, model, target_protein) -> list[BLISSExperiment]:
@@ -101,7 +66,7 @@ def collect_experiments(n, oracle, dataset, model, target_protein) -> list[BLISS
     valid_experiments = []
     for f in all_experiments_fn:
         f = f[:-4]  # Remove .csv
-        exp_name = experiment_names.get(f, f)
+        exp_name = f
         exp = BLISSExperiment(exp_name, base_path) # type: ignore
         components = f.split('_')
 
@@ -150,14 +115,6 @@ def display_experiments(n, oracle, dataset='test', model='all', target_protein=N
     labels = [exp.name for exp in experiments]
     colors = sn.color_palette("Set2", len(experiments))
     protein_output = target_protein + " " if target_protein is not None else ""
-    
-    if oracle == 'ddg':
-        oracle_name = 'ΔΔG'
-    elif oracle == 'protgpt':
-        oracle_name = 'Log Likelihood'
-    elif oracle == 'balanced':
-        oracle_name = 'Balanced'
-    else:
-        raise ValueError(f"Unknown oracle: {oracle}")
-    analyze_protein_gen_helper_violin(target_protein, data, labels, colors, 'ddg_eval', y_label='Predicted ΔΔG', legend_pos='right', title=f'{protein_output}ΔΔG Evaluation: {oracle_name} Alignment (N={n})')
-    analyze_protein_gen_helper_violin(target_protein, data, labels, colors, 'loglikelihood', y_label='Log Likelihood', legend_pos='right', title=f'{protein_output}Log Likelihood Evaluation: {oracle_name} Alignment (N={n})')
+
+    analyze_protein_gen_helper_violin(target_protein, data, labels, colors, 'ddg_eval', y_label='Predicted ΔΔG', legend_pos='right', title=f'{protein_output}ΔΔG Evaluation')
+    analyze_protein_gen_helper_violin(target_protein, data, labels, colors, 'loglikelihood', y_label='Log Likelihood', legend_pos='right', title=f'{protein_output}Log Likelihood Evaluation')
