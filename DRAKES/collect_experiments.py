@@ -18,6 +18,8 @@ class BLISSExperiment:
     oracle_mode: Optional[str] = None
     oracle_alpha: Optional[float] = None
     lasso_lambda: Optional[float] = None
+    beam_w: Optional[int] = None
+    steps_per_level: Optional[int] = None
     target_protein: Optional[str] = None
 
     def get_test_name(self) -> str:
@@ -34,6 +36,10 @@ class BLISSExperiment:
             out_name += f"_{self.align_type}_N={self.align_n}"
         if self.align_type == "linear":
             out_name += f"_lambda={self.lasso_lambda}"
+        elif self.align_type == "beam":
+            out_name += f"_beamw={self.beam_w}"
+        if self.align_type != "bon" and self.steps_per_level:
+            out_name += f"_stepsperlevel={self.steps_per_level}"
         return out_name
     
     def get_df(self) -> pd.DataFrame:
@@ -46,25 +52,41 @@ class BLISSExperiment:
 
 # Hardcoded labels for graphing
 experiment_names = {
-    'pretrained_test_ddg_linear_N=10_lambda=0.0005': 'Pretrained LASSO (N=10, λ=0.0005)',
-    'pretrained_test_ddg_linear_N=50_lambda=0.005': 'Pretrained LASSO (N=50, λ=0.0005)',
-    'pretrained_test_ddg_spectral_N=50': 'Pretrained SPECTRAL (N=50)',
+    'pretrained_test_ddg_linear_N=10_lambda=0.0005_stepsperlevel=1': 'Pretrained LASSO (N=10, λ=0.0005)',
+    'pretrained_test_ddg_linear_N=50_lambda=0.0005_stepsperlevel=1': 'Pretrained LASSO (N=50, λ=0.0005)',
+    'pretrained_test_ddg_linear_N=100_lambda=0.0005_stepsperlevel=1': 'Pretrained LASSO (N=100, λ=0.0005)',
+    'pretrained_test_ddg_spectral_N=50_stepsperlevel=1': 'Pretrained SPECTRAL (N=50)',
     'pretrained_test_ddg_bon_N=10': 'Pretrained BON (N=10)',
-    'pretrained_test_ddg_beam_N=10': 'Pretrained BEAM (N=10)',
     'pretrained_test_ddg_bon_N=50': 'Pretrained BON (N=50)',
     'pretrained_test_ddg_bon_N=100': 'Pretrained BON (N=100)',
-    'pretrained_test_ddg_beam_N=50': 'Pretrained BEAM (N=50)',
-    'pretrained_test_ddg_beam_N=100': 'Pretrained BEAM (N=100)',
+    'pretrained_test_ddg_bon_N=150': 'Pretrained BON (N=150)',
+    'pretrained_test_ddg_bon_N=200': 'Pretrained BON (N=200)',
+    'pretrained_test_ddg_bon_N=250': 'Pretrained BON (N=250)',
+    'pretrained_test_ddg_beam_N=10_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=10)',
+    'pretrained_test_ddg_beam_N=50_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=50)',
+    'pretrained_test_ddg_beam_N=100_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=100)',
+    'pretrained_test_ddg_beam_N=150_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=150)',
+    'pretrained_test_ddg_beam_N=200_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=200)',
+    'pretrained_test_ddg_beam_N=250_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=250)',
     'pretrained_test_protgpt_bon_N=10': 'Pretrained BON (N=10)',
     'pretrained_test_protgpt_bon_N=50': 'Pretrained BON (N=50)',
-    'pretrained_test_protgpt_beam_N=10': 'Pretrained BEAM (N=10)',
+    'pretrained_test_protgpt_bon_N=100': 'Pretrained BON (N=100)',
+    'pretrained_test_protgpt_bon_N=150': 'Pretrained BON (N=150)',
+    'pretrained_test_protgpt_bon_N=200': 'Pretrained BON (N=200)',
+    'pretrained_test_protgpt_bon_N=250': 'Pretrained BON (N=250)',
+    'pretrained_test_protgpt_beam_N=10_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=10)',
+    'pretrained_test_protgpt_beam_N=50_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=50)',
+    'pretrained_test_protgpt_beam_N=100_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=100)',
+    'pretrained_test_protgpt_beam_N=150_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=150)',
+    'pretrained_test_protgpt_beam_N=200_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=200)',
+    'pretrained_test_protgpt_beam_N=250_beamw=1_stepsperlevel=1': 'Pretrained BEAM (N=250)',
     'drakes_test': 'DRAKES',
     'pretrained_test': 'Pretrained'
 }
 
 
-# Based off order of parsing: model, [target_protein], dataset, oracle_mode, [oracle_alpha], align_type, align_n, [lasso_lambda]
-def collect_experiments(n, oracle, dataset, model) -> list[BLISSExperiment]:
+# Based off order of parsing: model, dataset, oracle_mode, [oracle_alpha], align_type, align_n, [lasso_lambda]
+def collect_experiments(n, oracle, dataset, model, target_protein) -> list[BLISSExperiment]:
     bliss_dir = '/home/shai/BLISS_Experiments/DRAKES/'
     exp_dir = 'DRAKES/drakes_protein/fmif/eval_results/'
     base_path = bliss_dir + exp_dir + dataset + '/'
@@ -86,14 +108,13 @@ def collect_experiments(n, oracle, dataset, model) -> list[BLISSExperiment]:
         if model != 'all' and components[0] != model: continue
         exp.model = components[0]
 
-        idx_offset = 0
-        if exp.model == 'single':
+        exp.dataset = components[1]
+        if exp.dataset != dataset:
             exp.target_protein = components[1]
-            idx_offset += 1
+            exp.dataset = 'single'
+            if exp.target_protein != target_protein: continue
 
-        if components[1 + idx_offset] != dataset: continue
-        exp.dataset = dataset
-
+        idx_offset = 0
         if len(components) > 3: # Process inference alignment experiments
             exp.oracle_mode = components[2 + idx_offset]
             if exp.oracle_mode != oracle: continue
@@ -108,14 +129,23 @@ def collect_experiments(n, oracle, dataset, model) -> list[BLISSExperiment]:
             if exp.align_type == 'linear':
                 exp.lasso_lambda = float(components[5 + idx_offset][7:]) # Removing prefix 'lambda='
                 idx_offset += 1
+            elif exp.align_type == 'beam':
+                exp.beam_w = int(components[5 + idx_offset][2:]) # Removing prefix 'W='
+                idx_offset += 1
+
+            if exp.align_type != 'bon':
+                exp.steps_per_level = int(components[5 + idx_offset][14:]) # Removing prefix 'stepsperlevel='
+                idx_offset += 1
 
         valid_experiments.append(exp)
         print(exp.name, exp.get_stats())
+
+    valid_experiments = sorted(valid_experiments, key=lambda e: e.name)
         
     return valid_experiments
 
 def display_experiments(n, oracle, dataset='test', model='all', target_protein=None):
-    experiments = collect_experiments(n, oracle, dataset, model)
+    experiments = collect_experiments(n, oracle, dataset, model, target_protein)
     data = [exp.get_df() for exp in experiments]
     labels = [exp.name for exp in experiments]
     colors = sn.color_palette("Set2", len(experiments))
