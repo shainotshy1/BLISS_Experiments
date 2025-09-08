@@ -38,8 +38,11 @@ class BLISSExperiment:
             out_name += f"_lambda={self.lasso_lambda}"
         elif self.align_type == "beam":
             out_name += f"_W={self.beam_w}"
-        if self.align_type != "bon" and self.steps_per_level:
-            out_name += f"_stepsperlevel={self.steps_per_level}"
+        if self.align_type != "bon" and self.align_type is not None:
+            if self.steps_per_level:
+                out_name += f"_stepsperlevel={self.steps_per_level}"
+            else:
+                out_name += f"_stepsperlevel=1" # default assumes stepsperlevel value to 1
         return out_name
     
     def get_df(self) -> pd.DataFrame:
@@ -109,8 +112,7 @@ def collect_experiments(n, oracle, dataset, model, target_protein) -> list[BLISS
         
     return valid_experiments
 
-def display_experiments(n, oracle, dataset='test', model='all', target_protein=None):
-    experiments = collect_experiments(n, oracle, dataset, model, target_protein)
+def display_experiments_helper(experiments, target_protein=None):
     data = [exp.get_df() for exp in experiments]
     labels = [exp.name for exp in experiments]
     colors = sn.color_palette("Set2", len(experiments))
@@ -118,3 +120,7 @@ def display_experiments(n, oracle, dataset='test', model='all', target_protein=N
 
     analyze_protein_gen_helper_violin(target_protein, data, labels, colors, 'ddg_eval', y_label='Predicted ΔΔG', legend_pos='right', title=f'{protein_output}ΔΔG Evaluation')
     analyze_protein_gen_helper_violin(target_protein, data, labels, colors, 'loglikelihood', y_label='Log Likelihood', legend_pos='right', title=f'{protein_output}Log Likelihood Evaluation')
+
+def display_experiments(n, oracle, dataset='test', model='all', target_protein=None):
+    experiments = collect_experiments(n, oracle, dataset, model, target_protein)
+    display_experiments_helper(experiments, target_protein=target_protein)

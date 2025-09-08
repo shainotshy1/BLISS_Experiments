@@ -164,7 +164,6 @@ def analyze_protein_gen_helper_violin(protein_name, dfs, dfs_labels, clrs, key, 
     plt.tight_layout()
     plt.show()
 
-
 def plot_reward_comparison(iterations, rewards, colors, linestyles, labels, title, reward_label):
   plt.style.use('default')
 
