@@ -21,6 +21,7 @@ class BLISSExperiment:
     beam_w: Optional[int] = None
     steps_per_level: Optional[int] = None
     target_protein: Optional[str] = None
+    specfeedback: Optional[int] = None
 
     def get_test_name(self) -> str:
         out_name = f"{self.model}" 
@@ -33,7 +34,7 @@ class BLISSExperiment:
         if self.oracle_mode == "balanced":
             out_name += f"_alpha={self.oracle_alpha}"
         if self.align_type and self.align_n:
-            out_name += f"_{self.align_type}_N={self.align_n}"
+            out_name += f"_{self.align_type}_N={self.align_n}_specfeedback={self.specfeedback}"
         if self.align_type == "linear":
             out_name += f"_lambda={self.lasso_lambda}"
         elif self.align_type == "beam":
@@ -95,16 +96,17 @@ def collect_experiments(n, oracle, dataset, model, target_protein, target_alg) -
             if target_alg is not None and target_alg != exp.align_type: continue
             exp.align_n = int(components[4 + idx_offset][2:]) # Removing prefix 'N='
             if n > 0 and exp.align_n != n: continue
+            exp.specfeedback = int(components[5 + idx_offset][13:]) # Removing prefix 'specfeedback='
 
             if exp.align_type == 'linear':
-                exp.lasso_lambda = float(components[5 + idx_offset][7:]) # Removing prefix 'lambda='
+                exp.lasso_lambda = float(components[6 + idx_offset][7:]) # Removing prefix 'lambda='
                 idx_offset += 1
             elif exp.align_type == 'beam':
-                exp.beam_w = int(components[5 + idx_offset][2:]) # Removing prefix 'W='
+                exp.beam_w = int(components[6 + idx_offset][2:]) # Removing prefix 'W='
                 idx_offset += 1
 
             if exp.align_type != 'bon':
-                exp.steps_per_level = int(components[5 + idx_offset][14:]) # Removing prefix 'stepsperlevel='
+                exp.steps_per_level = int(components[6 + idx_offset][14:]) # Removing prefix 'stepsperlevel='
                 idx_offset += 1
 
         valid_experiments.append(exp)
@@ -120,7 +122,7 @@ def display_experiments_helper(experiments, target_protein=None):
     colors = sn.color_palette("Set2", len(experiments))
     protein_output = target_protein + " " if target_protein is not None else ""
 
-    analyze_protein_gen_helper_violin(target_protein, data, labels, colors, 'ddg_eval', y_label='Predicted ΔΔG', legend_pos='right', title=f'{protein_output}ΔΔG Evaluation')
+    analyze_protein_gen_helper_violin(target_protein, data, labels, colors, 'ddg_eval', y_label='Predicted ΔΔG', legend_pos='right', title=f'{protein_output}ΔΔG (Eval)')
     analyze_protein_gen_helper_violin(target_protein, data, labels, colors, 'loglikelihood', y_label='Log Likelihood', legend_pos='right', title=f'{protein_output}Log Likelihood Evaluation')
 
 def display_experiments(oracle='ddg', dataset='test', model='all', target_protein=None, target_alg=None, n=0):

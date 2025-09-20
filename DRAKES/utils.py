@@ -103,7 +103,7 @@ import seaborn as sns
 import matplotlib.patches as mpatches
 from matplotlib.collections import PolyCollection
 
-def analyze_protein_gen_helper_violin(protein_name, dfs, dfs_labels, clrs, key, y_label='', v_line_thresh=None, v_line_label='', legend_pos='top', title=''):
+def analyze_protein_gen_helper_violin(protein_name, dfs, dfs_labels, clrs, key, y_label='', v_line_thresh=None, v_line_label='', legend_pos='top', title='', out_path=None):
     energy_points = None
     group_labels = []
     for df, label in zip(dfs, dfs_labels):
@@ -162,6 +162,8 @@ def analyze_protein_gen_helper_violin(protein_name, dfs, dfs_labels, clrs, key, 
         plt.title(title)
 
     plt.tight_layout()
+    if out_path is not None:
+        plt.savefig(out_path)
     plt.show()
 
 def plot_reward_comparison(iterations, rewards, colors, linestyles, labels, title, reward_label):
