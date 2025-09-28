@@ -61,7 +61,7 @@ def collect_experiments(n, oracle, dataset, model, target_protein, target_alg) -
     base_path = bliss_dir + exp_dir + dataset + '/'
     assert dataset in ['test', 'validation', 'train'] # TODO: support 'single' parsing
     assert model in ['all', 'pretrained', 'drakes']
-    assert oracle in ['ddg', 'protgpt', 'balanced'] # TODO: support scrmsd
+    assert oracle in ['ddg', 'protgpt', 'scrmsd']
     assert target_alg is None or target_alg in ['bon', 'beam', 'linear', 'spectral']
     assert type(n) == int
 
@@ -124,6 +124,7 @@ def display_experiments_helper(experiments, target_protein=None):
 
     analyze_protein_gen_helper_violin(target_protein, data, labels, colors, 'ddg_eval', y_label='Predicted ΔΔG', legend_pos='right', title=f'{protein_output}ΔΔG (Eval)')
     analyze_protein_gen_helper_violin(target_protein, data, labels, colors, 'loglikelihood', y_label='Log Likelihood', legend_pos='right', title=f'{protein_output}Log Likelihood Evaluation')
+    analyze_protein_gen_helper_violin(target_protein, data, labels, colors, 'scrmsd', y_label='scRMSD', legend_pos='right', title=f'{protein_output}scRMSD Evaluation')
 
 def display_experiments(oracle='ddg', dataset='test', model='all', target_protein=None, target_alg=None, n=0):
     experiments = collect_experiments(n, oracle, dataset, model, target_protein, target_alg)
