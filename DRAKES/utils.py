@@ -13,6 +13,10 @@ def get_eval_stats(df, target_protein = None, summary_func = np.median):
         stats['ddg'] = summary_func(ddg_eval)
         stats['ddg_std'] = np.std(ddg_eval)
         stats['pos_ddg_prop'] = np.mean(ddg_eval > 0)
+    if 'ddg' in df:
+        ddg_align = df['ddg'].values
+        stats['ddg_align'] = summary_func(ddg_align)
+        stats['ddg_align_std'] = np.std(ddg_align)
     if 'scrmsd' in df:
         scrmsd_eval = df['scrmsd'].values
         stats['scrmsd'] = summary_func(scrmsd_eval)
